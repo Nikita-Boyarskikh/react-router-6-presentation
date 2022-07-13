@@ -1,0 +1,460 @@
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/html">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>React Router V6</title>
+
+		<link rel="stylesheet" href="dist/reset.css">
+		<link rel="stylesheet" href="dist/reveal.css">
+		<link rel="stylesheet" href="dist/theme/black.css">
+
+		<!-- Theme used for syntax highlighted code -->
+		<link rel="stylesheet" href="plugin/highlight/monokai.css">
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+
+				<section>
+					<h1>React Router V6</h1>
+					<h2>разбор обновлений</h2>
+				</section>
+
+				<section>
+					<section data-markdown>
+						<textarea data-template>
+							#### `<Switch/>` → `<Routes/>`
+							#### `withRouter` → `useHistory`, `useLocation`, `useParams`, `useRouteMatch`
+						</textarea>
+					</section>
+
+					<section data-markdown>
+						<textarea data-template>
+							- All `<Route>`s and `<Link>`s inside a `<Routes>` are relative
+							- Routes are chosen based on the best match instead of being traversed in order
+							- `<Route children={...}>` → `<Route element={...}>`
+							- `<Route exact>` is gone. Instead, routes with descendant routes
+								use a trailing * in their path to indicate they match deeply
+						</textarea>
+					</section>
+
+					<section data-markdown>
+						<textarea data-template>
+							#### React Router V5
+
+							```js [|7-10|15|19-21|24-31]
+							import {
+								BrowserRouter, Switch, Route, Link, useRouteMatch,
+							} from "react-router-dom";
+
+							const App = () => (
+								<BrowserRouter>
+									<Switch>
+										<Route exact path="/"><Home /></Route>
+										<Route path="/users"><Users /></Route>
+									</Switch>
+								</BrowserRouter>
+							);
+
+							function Users() {
+								const match = useRouteMatch();
+								return (
+									<div>
+										<nav>
+											<Link to={`${match.url}/me`}>
+												My Profile
+											</Link>
+										</nav>
+
+										<Switch>
+											<Route path={`${match.path}/me`}>
+												<OwnUserProfile />
+											</Route>
+											<Route path={`${match.path}/:id`}>
+												<UserProfile />
+											</Route>
+										</Switch>
+									</div>
+								);
+							}
+							```
+						</textarea>
+					</section>
+
+					<section data-markdown>
+						<textarea data-template>
+							#### React Router V6
+
+							```js [|7-10|18|21-28]
+							import {
+								BrowserRouter, Routes, Route, Link,
+							} from "react-router-dom";
+
+							const App = () => (
+								<BrowserRouter>
+									<Routes>
+										<Route path="/" element={<Home />} />
+										<Route path="users/*" element={<Users />} />
+									</Routes>
+								</BrowserRouter>
+							);
+
+							function Users() {
+								return (
+									<div>
+										<nav>
+											<Link to="me">My Profile</Link>
+										</nav>
+
+										<Routes>
+											<Route path=":id" element={
+												<UserProfile />
+											} />
+											<Route path="me" element={
+												<OwnUserProfile />
+											} />
+										</Routes>
+									</div>
+								);
+							}
+							```
+						</textarea>
+					</section>
+				</section>
+
+				<section>
+					<section data-markdown>
+						<textarea data-template>
+							`<Outlet />`
+
+							```js [|7-13|24]
+							import {
+								BrowserRouter, Routes, Route, Link, Outlet,
+							} from "react-router-dom";
+
+							const App = () => (
+								<BrowserRouter>
+									<Routes>
+										<Route path="/" element={<Home />} />
+										<Route path="users" element={<Users />}>
+											<Route path="me" element={<OwnUserProfile />} />
+											<Route path=":id" element={<UserProfile />} />
+										</Route>
+									</Routes>
+								</BrowserRouter>
+							);
+
+							function Users() {
+								return (
+									<div>
+										<nav>
+											<Link to="me">My Profile</Link>
+										</nav>
+
+										<Outlet />
+									</div>
+								);
+							}
+							```
+						</textarea>
+					</section>
+				</section>
+
+				<section data-markdown>
+					<textarea data-template>
+						- `<Route sensitive>` → `<Routes caseSensitive>`
+						- `<Route strict>` does not have any effect for now and trailing / was ignored
+					</textarea>
+				</section>
+
+				<section>
+					<section data-markdown>
+						<textarea data-template>
+							`<Route path="">`
+
+							All of the following are valid route paths in v6:
+							```text
+							/groups
+							/groups/admin
+							/users/:id
+							/users/:id/messages
+							/files/*
+							/files/:id/*
+							```
+
+							The following RegExp-style route paths are not valid in v6:
+							```text
+							/users/:id?
+							/tweets/:id(\d+)
+							/files/*/cat.jpg
+							/files-*
+							```
+						</textarea>
+					</section>
+
+					<section data-markdown>
+						<textarea data-template>
+							If your routes look like this:
+							```html
+							<Route path="app">
+								<Route path="dashboard">
+									<Route path="stats" />
+								</Route>
+							</Route>
+							```
+
+							and the current URL is /app/dashboard (with or without a trailing slash):
+							```html
+							<Link to="stats">          => <a href="/app/dashboard/stats">
+							<Link to="../stats">       => <a href="/app/stats">
+							<Link to="../../stats">    => <a href="/stats">
+							<Link to="../../../stats"> => <a href="/stats">
+							```
+						</textarea>
+					</section>
+				</section>
+
+				<section>
+					<section data-markdown>
+						<textarea data-template>
+							- `history` API → `useNavigate`
+							- `navigate` also have `{ replace, state }` 2nd parameter
+							- `go`/`goBack`/`goForward` → `navigate(-1/+1)`
+						</textarea>
+					</section>
+
+					<section data-markdown>
+						<textarea data-template>
+							This is a React Router v5 navigation:
+
+							```js
+							const history = useHistory();
+							history.push('/home');
+							```
+
+							This is React Router v6 navigation:
+							```js
+							const navigate = useNavigate();
+							navigate('/home');
+							```
+						</textarea>
+					</section>
+
+					<section data-markdown>
+						<textarea data-template>
+							#### Declarative navigation
+
+							V5 declarative navigation:
+							```html
+							<Redirect to="about" />
+							<Redirect to="home" push />
+							```
+
+							V6 declarative navigation:
+							```html
+							<Navigate to="about" replace />
+							<Navigate to="home" />
+							```
+
+							V5 link props:
+							```html
+							<Link to={{ pathname: "/home", state: state, replace: true }} />
+							```
+
+							V6 link props:
+							```html
+							<Link to="/home" state={state} replace />
+							```
+						</textarea>
+					</section>
+				</section>
+
+				<section data-markdown>
+					<textarea data-template>
+						`<Link component />` → `useHref`, `useLinkClickHandler` / `useLinkPressHandler`
+
+						```js [|9|10-12|15-26]
+						import { FancyPantsLink } from "@fancy-pants/design-system";
+						import {
+							useHref, useLinkClickHandler,
+						} from "react-router-dom";
+
+						const Link = React.forwardRef(({
+							onClick, replace = false, state, target, to, ...rest,
+						}, ref) => {
+							let href = useHref(to);
+							let handleClick = useLinkClickHandler(to, {
+								replace, state, target,
+							});
+
+							return (
+								<FancyPantsLink
+									{...rest}
+									href={href}
+									onClick={(event) => {
+										onClick?.(event);
+										if (!event.defaultPrevented) {
+											handleClick(event);
+										}
+									}}
+									ref={ref}
+									target={target}
+								/>
+							);
+						});
+						```
+					</textarea>
+				</section>
+
+				<section data-markdown>
+					<textarea data-template>
+						`<NavLink exact>` → `<NavLink end>`
+					</textarea>
+				</section>
+
+				<section>
+					<section data-markdown>
+						<textarea data-template>
+							The `activeClassName` and `activeStyle` props have been removed from `<NavLink />`
+						</textarea>
+					</section>
+
+					<section data-markdown>
+						<textarea data-template>
+							Before:
+
+							```js [|2-3|5-6]
+							<NavLink
+								style={{ color: 'blue' }}
+								activeStyle={{ color: 'green' }}
+
+								className="nav-link"
+								activeClassName="activated"
+							/>
+							```
+						</textarea>
+					</section>
+
+					<section data-markdown>
+						<textarea data-template>
+							After:
+
+							```js [|2-4|5-7]
+								<NavLink
+									style={({ isActive }) => ({
+										color: isActive ? 'green' : 'blue',
+									})}
+									className={({ isActive }) => "nav-link" + (
+										isActive ? " activated" : ""
+									)}
+								/>
+							```
+						</textarea>
+					</section>
+				</section>
+
+				<section data-markdown>
+					<textarea data-template>
+						`react-router-config` → `useRoutes`, `matchRoutes`
+					</textarea>
+				</section>
+
+				<section data-markdown>
+					<textarea data-template>
+						`<Prompt />`, `usePrompt`, `useBlocker` have been removed
+					</textarea>
+				</section>
+
+				<section data-markdown>
+					<textarea data-template>
+						The `StaticRouter` component has moved into a new bundle: `react-router-dom/server`.
+					</textarea>
+				</section>
+
+				<section data-markdown>
+					<textarea data-template>
+						`useRouteMatch` → `useMatch`
+
+						- New pattern style (both object and string form)
+						- The pattern argument is now required
+						- No longer accepts an array of patterns
+						- `useRouteMatch({ strict })` → `useMatch({ end })`
+						- `useRouteMatch({ sensitive })` → `useMatch({ caseSensitive })`
+						- It returns a match object with a different shape
+					</textarea>
+				</section>
+
+				<section>
+					<section data-markdown>
+						<textarea data-template>
+							`matchPath` changed API
+
+							Before:
+
+							```js
+								// This is a React Router v5 app
+								import { matchPath } from "react-router-dom";
+
+								const match = matchPath("/users/123", {
+									path: "/users/:id",
+									exact: true, // Optional, defaults to false
+									strict: false, // Optional, defaults to false
+								});
+							```
+						</textarea>
+					</section>
+
+					<section data-markdown>
+						<textarea data-template>
+							After:
+
+							```js
+								// This is a React Router v6 app
+								import { matchPath } from "react-router-dom";
+
+								const match = matchPath(
+									{
+										path: "/users/:id",
+										caseSensitive: false, // Optional
+										end: true, // Optional
+									},
+									"/users/123"
+								);
+							```
+						</textarea>
+					</section>
+				</section>
+
+				<section>
+					<h4>For more information:</h4>
+					<img src="QR.png" alt="More info">
+					<a href="https://reactrouter.com/docs/en/v6/upgrading/v5">
+						https://reactrouter.com/docs/en/v6/upgrading/v5
+					</a>
+				</section>
+
+			</div>
+		</div>
+
+		<script src="dist/reveal.js"></script>
+		<script src="plugin/markdown/markdown.js"></script>
+		<script src="plugin/highlight/highlight.js"></script>
+		<script>
+			// More info about initialization & config:
+			// - https://revealjs.com/initialization/
+			// - https://revealjs.com/config/
+			Reveal.initialize({
+				hash: true,
+				controlsTutorial: false,
+				slideNumber: true,
+				navigationMode: 'linear',
+
+
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [ RevealMarkdown, RevealHighlight ],
+			})
+		</script>
+	</body>
+</html>
